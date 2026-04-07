@@ -126,6 +126,50 @@ async def post_new_task(
     return tasks_db[new_task_id]
 
 
+# PUT -- Replace an existing task
+# Replaces the entire task resource while preserving server-managed fields
+@app.put("/tasks/{task_id}", status_code=status.HTTP_200_OK)
+async def put_task(
+    task_id: int,
+    title: str,
+    description: str,
+    priority: str,
+    due_date: str,
+    tags: list[str],
+    user_id: int,
+) -> dict[str, Any]:
+
+    # Validate that the requested task exists in the database
+    if task_id not in tasks_db:
+        # If the task does not exist, return HTTP 404
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+    # Retrieve the current task to preserve fields controlled by the server
+    old_task = tasks_db[task_id]
+
+    # Preserve immutable or server-managed fields
+    created_at = old_task["created_at"]
+    completed = old_task["completed"]
+
+    # Replace the task with the new data provided in the request
+    tasks_db[task_id] = {
+        "id": task_id,
+        "title": title,
+        "description": description,
+        "completed": completed,
+        "priority": priority,
+        "created_at": created_at,
+        "due_date": due_date,
+        "tags": tags,
+        "user_id": user_id,
+    }
+
+    # Return the updated task with HTTP 200 OK
+    return tasks_db[task_id]
+
+
 # Scalar documentation
 @app.get("/scalar", include_in_schema=False)
 async def scalar_html():
