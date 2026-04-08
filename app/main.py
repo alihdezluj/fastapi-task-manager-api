@@ -92,7 +92,7 @@ async def get_task(task_id: int) -> dict[str, Any]:
 # POST -- Create a new task
 # Generates an ID automatically and stores the task in the database
 @app.post("/tasks", status_code=status.HTTP_201_CREATED)
-async def post_new_task(
+async def create_new_task(
     title: str,
     description: str,
     priority: str,
@@ -129,7 +129,7 @@ async def post_new_task(
 # PUT -- Replace an existing task
 # Replaces the entire task resource while preserving server-managed fields
 @app.put("/tasks/{task_id}", status_code=status.HTTP_200_OK)
-async def put_task(
+async def replace_task(
     task_id: int,
     title: str,
     description: str,
@@ -168,6 +168,48 @@ async def put_task(
 
     # Return the updated task with HTTP 200 OK
     return tasks_db[task_id]
+
+
+# PATCH -- Update an existing task
+# Allows partial updates by modifying only the fields provided in the request
+@app.patch("/tasks/{task_id}", status_code=status.HTTP_200_OK)
+async def update_task(
+    task_id: int,
+    title: str | None = None,
+    description: str | None = None,
+    priority: str | None = None,
+    due_date: str | None = None,
+    tags: list[str] | None = None,
+    user_id: int | None = None,
+) -> dict[str, Any]:
+
+    # Validate that the requested task exists in the database
+    if task_id not in tasks_db:
+        # If the task does not exist, return HTTP 404
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+
+    # Retrieve the current task
+    task = tasks_db[task_id]
+
+    # Update only the fields that were provided in the request
+    if title is not None:
+        task["title"] = title
+    if description is not None:
+        task["description"] = description
+    if priority is not None:
+        task["priority"] = priority
+    if due_date is not None:
+        task["due_date"] = due_date
+    if tags is not None:
+        task["tags"] = tags
+    if user_id is not None:
+        task["user_id"] = user_id
+
+    # Return the updated task
+    return task
 
 
 # Scalar documentation
